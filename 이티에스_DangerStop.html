@@ -552,15 +552,30 @@
     async function uploadToCloudinary(base64) {
         if (!base64) return null;
         try {
+            // base64를 Blob으로 변환
+            const byteString = atob(base64.split(',')[1]);
+            const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            const blob = new Blob([ab], { type: mimeString });
+
             const formData = new FormData();
-            formData.append('file', base64);
+            formData.append('file', blob, 'photo.jpg');
             formData.append('upload_preset', 'danger_stop');
+
             const res = await fetch('https://api.cloudinary.com/v1_1/dw8shedx8/image/upload', {
                 method: 'POST',
                 body: formData
             });
             const data = await res.json();
-            console.log('Cloudinary 응답:', data);
+            console.log('Cloudinary 응답:', JSON.stringify(data));
+            if (data.error) {
+                console.error('Cloudinary 오류:', data.error.message);
+                return null;
+            }
             return data.secure_url || null;
         } catch(e) {
             console.error('Cloudinary 업로드 실패:', e);
