@@ -507,9 +507,22 @@
                 </button>
             </div>
 
+            <!-- 개선 방향 -->
+            <div class="section-card slide-up" style="animation-delay:0.12s">
+                <div class="section-head">
+                    <div class="section-dot" style="background:#2E8B57"></div>
+                    <div class="section-label" style="color:#2E8B57">개선 방향 (선택)</div>
+                </div>
+                <div class="trow">
+                    <div class="tlabel">스스로 생각하는 개선 방향</div>
+                    <textarea class="itextarea" id="improvement"
+                        placeholder="예) 미끄럼 방지 매트 설치, 자재 적재 구역 표시 등 — 작성하신 의견은 위험성평가의 개선 조치에 반영됩니다"></textarea>
+                </div>
+            </div>
+
             <!-- 제출 버튼 -->
             <button class="btn-submit slide-up" id="submitBtn" onclick="submitReport()"
-                style="animation-delay:0.15s">
+                style="animation-delay:0.18s">
                 🛡️ 안전신문고에 제출하기
             </button>
 
@@ -616,6 +629,7 @@
             contact:     document.getElementById('contact').value.trim() || '',
             affiliation, riskPlace, riskFactor,
             riskDesc:    document.getElementById('riskDesc').value.trim(),
+            improvement: document.getElementById('improvement').value.trim(),
             photoBase64: photoBase64 || null,
             submittedAt: Date.now(), status: '미확인'
         };
@@ -634,7 +648,7 @@
     }
 
     function resetForm() {
-        ['name','contact','riskPlace','riskFactor','riskDesc']
+        ['name','contact','riskPlace','riskFactor','riskDesc','improvement']
             .forEach(id => document.getElementById(id).value = '');
         document.getElementById('affiliation').value = '';
         document.getElementById('affiliation').classList.add('ph');
