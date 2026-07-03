@@ -287,17 +287,30 @@
         .pzone {
             border: 2px dashed #B2E0DC; border-radius: 16px;
             background: linear-gradient(135deg, #F5FFFD, #F0F9FF);
-            text-align: center; cursor: pointer;
+            text-align: center;
             position: relative; transition: all 0.2s;
         }
-        .pzone:active { opacity: 0.85; }
         .pzone.filled { border-style: solid; border-color: var(--teal); background: white; }
-        .pzone input[type=file] {
-            position: absolute; inset: 0; opacity: 0;
-            cursor: pointer; width: 100%; height: 100%; z-index: 2;
-        }
-        .pzone.filled input[type=file] { display: none; }
         .p-placeholder { padding: 28px 16px; }
+
+        /* 카메라 / 갤러리 버튼 */
+        .p-btns { display: flex; gap: 8px; margin-top: 10px; }
+        .p-btn {
+            flex: 1; padding: 13px 8px;
+            border-radius: 12px; border: none;
+            font-size: 13.5px; font-weight: 800; font-family: inherit;
+            cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .p-btn:active { transform: scale(0.96); }
+        .p-btn-cam {
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            color: #fff; box-shadow: 0 4px 14px rgba(0,184,166,0.3);
+        }
+        .p-btn-gal {
+            background: #fff; color: var(--teal-dark);
+            border: 1.5px solid var(--teal); 
+        }
         .p-ico  { font-size: 32px; margin-bottom: 8px; }
         .p-main { font-size: 14px; font-weight: 700; color: var(--gray); margin-bottom: 4px; }
         .p-sub  { font-size: 12px; color: var(--subtext); }
@@ -492,16 +505,33 @@
                     <div class="section-dot" style="background:#7C5CBF"></div>
                     <div class="photo-card-label" style="color:#7C5CBF">현장 사진 (선택)</div>
                 </div>
+                <!-- 숨겨진 file input 2개 -->
+                <input type="file" id="photoCamera" accept="image/*"
+                    capture="environment" onchange="previewPhoto(this)" hidden>
+                <input type="file" id="photoGallery" accept="image/*"
+                    onchange="previewPhoto(this)" hidden>
+
                 <div class="pzone" id="photoZone">
-                    <input type="file" id="photoFile" accept="image/*"
-                        capture="environment" onchange="previewPhoto(this)">
                     <div id="photoPlaceholder" class="p-placeholder">
                         <div class="p-ico">📷</div>
-                        <div class="p-main">사진 첨부 / 카메라 촬영</div>
-                        <div class="p-sub">갤러리 선택 또는 직접 촬영</div>
+                        <div class="p-main">현장 사진을 첨부해 주세요</div>
+                        <div class="p-sub">카메라로 촬영하거나 갤러리에서 선택</div>
                     </div>
                     <img id="photoPreview" alt="현장 사진">
                 </div>
+
+                <!-- 카메라 / 갤러리 버튼 -->
+                <div class="p-btns" id="photoBtns">
+                    <button type="button" class="p-btn p-btn-cam"
+                        onclick="document.getElementById('photoCamera').click()">
+                        📷 카메라 촬영
+                    </button>
+                    <button type="button" class="p-btn p-btn-gal"
+                        onclick="document.getElementById('photoGallery').click()">
+                        🖼️ 갤러리에서 선택
+                    </button>
+                </div>
+
                 <button class="p-del" id="photoDelBtn" onclick="removePhoto(event)">
                     🗑️ 사진 삭제
                 </button>
@@ -594,6 +624,7 @@
                 pv.src = photoBase64; pv.style.display = 'block';
                 document.getElementById('photoPlaceholder').style.display = 'none';
                 document.getElementById('photoZone').classList.add('filled');
+                document.getElementById('photoBtns').style.display = 'none';
                 document.getElementById('photoDelBtn').style.display = 'block';
             };
             img.src = e.target.result;
@@ -604,11 +635,13 @@
     function removePhoto(e) {
         if (e) e.stopPropagation();
         photoBase64 = null;
-        document.getElementById('photoFile').value = '';
+        document.getElementById('photoCamera').value = '';
+        document.getElementById('photoGallery').value = '';
         const pv = document.getElementById('photoPreview');
         pv.style.display = 'none'; pv.src = '';
         document.getElementById('photoPlaceholder').style.display = '';
         document.getElementById('photoZone').classList.remove('filled');
+        document.getElementById('photoBtns').style.display = 'flex';
         document.getElementById('photoDelBtn').style.display = 'none';
     }
 
