@@ -1,0 +1,25 @@
+{
+  "name": "ETS 안전포털",
+  "short_name": "ETS 안전포털",
+  "description": "이티에스 안전 관리 통합 포털 - 안전신문고, DangerStop, 위험성평가 공유",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#006D66",
+  "theme_color": "#006D66",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

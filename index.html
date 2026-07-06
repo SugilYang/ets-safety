@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>이티에스 안전앱</title>
+    <title>ETS 안전포털</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- ===== PWA (홈 화면 추가) 설정 ===== -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#006D66">
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- iOS(아이폰) 홈 화면 앱 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ETS 안전포털">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family:"Noto Sans KR",sans-serif; }
 
@@ -118,6 +128,40 @@
             border-radius: 50%;
         }
 
+        /* 홈 화면에 추가 버튼 */
+        .install-btn {
+            display: none;              /* 기본 숨김, 설치 가능할 때만 표시 */
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg,#FFC107 0%,#FFB300 100%);
+            color: #263238;
+            font-size: 15px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(255,193,7,0.35);
+            transition: transform 0.15s;
+        }
+        .install-btn:active { transform: scale(0.97); }
+
+        /* iOS 안내 박스 */
+        .ios-guide {
+            display: none;
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #E0F2F1;
+            font-size: 13px;
+            line-height: 1.7;
+            text-align: center;
+        }
+        .ios-guide b { color: #FFC107; }
+
         /* 푸터 */
         .footer {
             margin-top: 24px;
@@ -167,11 +211,63 @@
         <div class="card-arrow">›</div>
     </a>
 
+    <!-- 홈 화면에 추가 버튼 (안드로이드) -->
+    <button id="installBtn" class="install-btn">📲 홈 화면에 추가</button>
+    <!-- iOS 안내 -->
+    <div id="iosGuide" class="ios-guide">
+        📲 홈 화면에 추가하려면<br>
+        하단 <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 눌러주세요
+    </div>
+
     <div class="footer">
         ⓒ 이티에스 · 환경안전담당<br>
         안전한 이티에스를 함께 만들어요 🙏
     </div>
 
 </div>
+
+<script>
+    // ===== 홈 화면에 추가 (PWA 설치) =====
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('installBtn');
+    const iosGuide = document.getElementById('iosGuide');
+
+    // 이미 홈 화면 앱으로 실행 중인지
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+
+    // iOS 사파리 판별
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+
+    if (!isStandalone) {
+        if (isIOS) {
+            // 아이폰: 안내 문구 표시 (버튼 자동 설치 불가)
+            iosGuide.style.display = 'block';
+        }
+    }
+
+    // 안드로이드/크롬: 설치 가능 이벤트 → 버튼 표시
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (!isStandalone) installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', async function() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (choice.outcome === 'accepted') {
+            installBtn.style.display = 'none';
+        }
+    });
+
+    // 설치 완료 시 버튼 숨김
+    window.addEventListener('appinstalled', function() {
+        installBtn.style.display = 'none';
+    });
+</script>
 </body>
 </html>
