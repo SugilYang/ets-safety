@@ -382,11 +382,11 @@
         /* 모달 */
         .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:9999; padding:20px; }
         .modal-overlay.open { display:flex; }
-        .modal { background:white; border-radius:16px; width:100%; max-width:920px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
-        .modal-header { background:linear-gradient(135deg,#1e3a5f,#2196F3); color:white; padding:20px 28px; border-radius:16px 16px 0 0; display:flex; justify-content:space-between; align-items:center; }
+        .modal { background:white; border-radius:16px; width:100%; max-width:920px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+        .modal-header { background:linear-gradient(135deg,#1e3a5f,#2196F3); color:white; padding:20px 28px; border-radius:16px 16px 0 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
         .modal-header h2 { font-size:18px; }
         .modal-close { background:rgba(255,255,255,0.2); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:18px; }
-        .modal-body { padding:28px; }
+        .modal-body { padding:28px; overflow-y:auto; flex:1 1 auto; }
         .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
         .detail-field { display:flex; flex-direction:column; gap:4px; }
         .detail-field.full { grid-column:1/-1; }
@@ -604,8 +604,8 @@
         }
 
         /* 대시보드: 글씨 위주 영역은 숨기고 그래프 위주로 */
-        /* 두 번째 chart-row(유형별 개선율 리스트 + 최근 등록 목록) 숨김 */
-        body.mobile-view #page-dashboard .chart-row:nth-of-type(2) { display: none !important; }
+        /* 마지막 chart-row(유형별 개선율 리스트 + 최근 등록 목록)만 숨김 → 그래프 3개는 유지 */
+        body.mobile-view #page-dashboard .chart-row:last-of-type { display: none !important; }
         /* 위험성 매트릭스 표(대시보드 직속 큰 카드) 숨김 */
         body.mobile-view #page-dashboard > .card { display: none !important; }
 
@@ -1343,7 +1343,13 @@ function setupBackGuard() {
     window.addEventListener('popstate', function() {
         // 다시 상태를 밀어넣어 밖으로 못 나가게 하고
         history.pushState({ app: 'risk' }, '', location.href);
-        // 대시보드 탭으로 이동
+        // 열려 있는 모달이 있으면 그 모달만 닫고 종료 (앱 이동 안 함)
+        var openModal = document.querySelector('.modal-overlay.open');
+        if (openModal) {
+            openModal.classList.remove('open');
+            return;
+        }
+        // 모달이 없을 때만 대시보드 탭으로 이동
         var dashTab = document.querySelector('.tab-item[onclick*="\'dashboard\'"]');
         showPage('dashboard', dashTab);
     });
@@ -1913,7 +1919,7 @@ function renderTable(data) {
         const idx=assessments.indexOf(a); const rl=getRiskLevel(a.score); const hasPhoto=a.beforePhoto||a.afterPhoto;
         return `<tr>
             <td style="text-align:center;">${admin?`<input type="checkbox" class="row-check" data-idx="${idx}">`:''}</td>
-            <td>${idx+1}</td><td>${a.date}</td>
+            <td>${idx+1}</td><td style="white-space:nowrap;">${fmtDate(a.date)}</td>
             <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.workplace}</td>
             <td><span class="risk-badge" style="background:#e3f2fd;color:#1565c0;">${a.riskType}</span></td>
             <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.riskFactor}</td>
@@ -1984,7 +1990,7 @@ function showDetail(idx) {
             </div>
             <div style="flex:1">
                 <h3 style="font-size:16px;font-weight:700;">${a.riskFactor}</h3>
-                <p style="color:#888;font-size:13px;margin-top:4px;">${a.workplace} · ${a.riskType} · ${a.date}</p>
+                <p style="color:#888;font-size:13px;margin-top:4px;">${a.workplace} · ${a.riskType} · ${fmtDate(a.date)}</p>
                 <p style="color:#555;font-size:13px;margin-top:8px;">${a.riskDesc||''}</p>
             </div>
         </div>
@@ -1993,7 +1999,7 @@ function showDetail(idx) {
             <div class="detail-field"><label>빈도</label><div class="value">${a.freq} - ${FREQ_LABELS[a.freq]}</div></div>
             ${reductionHtml}
             <div class="detail-field"><label>담당자</label><div class="value">${a.responsible||'-'}</div></div>
-            <div class="detail-field"><label>목표일</label><div class="value">${a.dueDate||'-'}</div></div>
+            <div class="detail-field"><label>목표일</label><div class="value">${fmtDate(a.dueDate)}</div></div>
             <div class="detail-field"><label>개선 상태</label><div class="value">${a.status}</div></div>
             <div class="detail-field"><label>평가자</label><div class="value">${a.evaluator||'-'}</div></div>
             <div class="detail-field full"><label>개선 조치</label><div class="improvement-tags">${improvements}</div></div>
@@ -2228,7 +2234,7 @@ function buildPrintArea(data, title, company, opts) {
                 <tr>
                     <td class="label">개선율</td><td><strong>${Math.round(done/total*100)||0}%</strong></td>
                     <td class="label">평균 위험도감소율</td><td><strong style="color:#2e7d32">${Math.round(avgReduction)}%</strong></td>
-                    <td class="label">평가 기간</td><td colspan="3">${data[0]?.date||''} ~ ${data[data.length-1]?.date||''}</td>
+                    <td class="label">평가 기간</td><td colspan="3">${fmtDate(data[0]?.date)} ~ ${fmtDate(data[data.length-1]?.date)}</td>
                 </tr>
             </table>
 
@@ -2245,7 +2251,7 @@ function buildPrintArea(data, title, company, opts) {
                         const rl=getRiskLevel(a.score);
                         const scoreStyle=a.score>=16?'color:#b71c1c;font-weight:900':a.score>=7?'color:#e65100;font-weight:700':'color:#2e7d32;font-weight:700';
                         return `<tr>
-                            <td>${i+1}</td><td>${a.date}</td><td>${a.workplace}</td><td>${a.riskType}</td>
+                            <td>${i+1}</td><td>${fmtDate(a.date)}</td><td>${a.workplace}</td><td>${a.riskType}</td>
                             <td style="text-align:left;">${a.riskFactor}</td>
                             <td>${a.severity}</td><td>${a.freq}</td>
                             <td style="${scoreStyle}">${a.score}</td>
@@ -2342,7 +2348,7 @@ function buildPrintArea(data, title, company, opts) {
             <div class="print-section-title">📋 위험 기본 정보</div>
             <table class="print-info-table">
                 <tr>
-                    <td class="label">평가일</td><td>${a.date}</td>
+                    <td class="label">평가일</td><td>${fmtDate(a.date)}</td>
                     <td class="label">평가자</td><td colspan="3">${a.evaluator||'-'}</td>
                 </tr>
                 <tr>
@@ -2359,7 +2365,7 @@ function buildPrintArea(data, title, company, opts) {
                     <td class="label">위험 상황</td><td colspan="5">${a.riskDesc||'(기술 없음)'}</td>
                 </tr>
                 <tr>
-                    <td class="label">개선 목표일</td><td>${a.dueDate||'-'}</td>
+                    <td class="label">개선 목표일</td><td>${fmtDate(a.dueDate)}</td>
                     <td class="label">위험도</td>
                     <td><span class="print-score-box" style="background:${severityBg};color:white;">${a.score}점</span></td>
                     <td class="label">위험 수준</td><td>${rl.level}</td>
@@ -2381,6 +2387,24 @@ function buildPrintArea(data, title, company, opts) {
 }
 
 // ===================== 공통 함수 =====================
+// 날짜를 YYYY-MM-DD 형태로 정규화 (ISO 문자열의 T 이후 시간 제거)
+function fmtDate(v) {
+    if (v == null || v === '') return '-';
+    var s = String(v).trim();
+    // 2026-07-06T00:00:00.000Z / 2026-07-06 12:34:56 등에서 날짜부만
+    var m = s.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+    if (m) return m[1] + '-' + m[2] + '-' + m[3];
+    // Date로 파싱 가능한 경우 (영문 날짜 문자열 등)
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+        var y = d.getFullYear(),
+            mo = String(d.getMonth() + 1).padStart(2, '0'),
+            da = String(d.getDate()).padStart(2, '0');
+        return y + '-' + mo + '-' + da;
+    }
+    return s;
+}
+
 function getRiskLevel(score) {
     if(score<=3)  return {level:'매우낮음',class:'risk-very-low',statusClass:'low'};
     if(score<=6)  return {level:'낮음',class:'risk-low',statusClass:'medium'};
