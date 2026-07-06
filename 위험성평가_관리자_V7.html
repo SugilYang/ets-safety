@@ -572,6 +572,68 @@
             .photo-compare { grid-template-columns:1fr; }
             .risk-compare-row { grid-template-columns:1fr; }
         }
+    /* 폰 전용 메인 버튼: 기본 숨김, 폰에서만 표시 */
+    .mobile-main-btn { display: none; }
+
+    /* ===================== 폰 전용 (조회 전용 간단 화면) ===================== */
+    @media (max-width: 600px) {
+        /* 폰 전용 메인 버튼 표시 */
+        body.mobile-view .mobile-main-btn {
+            display: flex !important;
+            color: var(--secondary) !important;
+            font-weight: 700 !important;
+        }
+
+        /* 평가 기준표 탭 숨김 → 대시보드·평가목록 2개만 */
+        body.mobile-view .tab-item[onclick*="'guide'"] { display: none !important; }
+
+        /* 헤더 우측 관리 버튼들·모드배지 숨김 (혹시 조회모드에서 남는 것 방지) */
+        body.mobile-view .nav-btn { display: none !important; }
+
+        /* 탭 바: 좌우 밀림 방지, 화면 폭에 꽉 맞게 균등 배치 */
+        body.mobile-view .nav-tabs,
+        body.mobile-view .tab-bar,
+        body.mobile-view .tabs { overflow-x: hidden !important; }
+        body.mobile-view .tab-item {
+            flex: 1 1 0 !important;
+            text-align: center !important;
+            justify-content: center !important;
+            white-space: nowrap !important;
+            font-size: 15px !important;
+            padding: 13px 4px !important;
+        }
+
+        /* 대시보드: 글씨 위주 영역은 숨기고 그래프 위주로 */
+        /* 두 번째 chart-row(유형별 개선율 리스트 + 최근 등록 목록) 숨김 */
+        body.mobile-view #page-dashboard .chart-row:nth-of-type(2) { display: none !important; }
+        /* 위험성 매트릭스 표(대시보드 직속 큰 카드) 숨김 */
+        body.mobile-view #page-dashboard > .card { display: none !important; }
+
+        /* KPI 숫자 카드: 2열로 깔끔하게 */
+        body.mobile-view .dashboard-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+        }
+
+        /* 그래프 3개는 세로로 하나씩 크게 */
+        body.mobile-view .chart-row { grid-template-columns: 1fr !important; display: grid !important; gap: 12px !important; }
+
+        /* 전체 여백·폭 정리 (첫 접속 시 어긋남 방지) */
+        body.mobile-view .container,
+        body.mobile-view .main,
+        body.mobile-view main { padding-left: 14px !important; padding-right: 14px !important; max-width: 100% !important; }
+
+        /* 헤더 제목 줄바꿈 정돈 (없어보이지 않게) */
+        body.mobile-view .header-title,
+        body.mobile-view h1 { font-size: 18px !important; line-height: 1.35 !important; }
+
+        /* 카드 제목·본문 줄바꿈 자연스럽게 */
+        body.mobile-view .card-title { font-size: 15px !important; line-height: 1.4 !important; word-break: keep-all !important; }
+        body.mobile-view .kpi-info h3 { font-size: 26px !important; }
+        body.mobile-view .kpi-info p,
+        body.mobile-view .kpi-label { font-size: 12px !important; word-break: keep-all !important; }
+    }
     </style>
 </head>
 <body>
@@ -583,8 +645,8 @@
     <h2 style="font-size:20px;font-weight:800;color:#1e3a5f;margin-bottom:6px;">위험성 평가 관리 시스템</h2>
     <p style="font-size:13px;color:#888;margin-bottom:24px;">Risk Assessment System</p>
 
-    <input id="loginPin" type="password" inputmode="numeric" pattern="[0-9]*" placeholder="관리자 PIN" maxlength="6"
-      style="width:100%;padding:14px;border:1.5px solid #ddd;border-radius:8px;font-size:18px;letter-spacing:6px;text-align:center;margin-bottom:12px;box-sizing:border-box;"
+    <input id="loginPin" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="관리자 PIN" maxlength="6"
+      style="width:100%;padding:14px;border:1.5px solid #ddd;border-radius:8px;font-size:18px;letter-spacing:6px;text-align:center;margin-bottom:12px;box-sizing:border-box;-webkit-text-security:disc;text-security:disc;"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#1e3a5f,#2196F3);color:white;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">🔓 관리자 로그인</button>
     <div id="loginError" style="color:#c62828;font-size:13px;margin-top:10px;display:none;">PIN이 올바르지 않습니다.</div>
@@ -610,6 +672,7 @@
             </div>
         </div>
         <div class="header-nav">
+            <button class="nav-btn" onclick="goMain()" style="background:rgba(255,255,255,0.15);">🏠 메인</button>
             <button class="nav-btn admin-only" onclick="exportData()">📥 CSV 내보내기</button>
             <button class="nav-btn btn-print admin-only" onclick="openPrintModal()" style="background:rgba(156,39,176,0.3);border-color:rgba(156,39,176,0.5)">🖨️ 보고서 인쇄</button>
             <button class="nav-btn admin-only" onclick="openMigrateModal()" style="background:rgba(255,193,7,0.3);border-color:rgba(255,193,7,0.5)">📦 기존 데이터 이전</button>
@@ -623,6 +686,7 @@
         <div class="tab-item admin-only" onclick="showPage('input',this)">➕ 위험성 평가 입력</div>
         <div class="tab-item" onclick="showPage('list',this)">📋 평가 목록</div>
         <div class="tab-item" onclick="showPage('guide',this)">📖 평가 기준표</div>
+        <div class="tab-item mobile-main-btn" onclick="goMain()">🏠 메인</div>
     </div>
 </header>
 
@@ -1266,6 +1330,25 @@ window.doLogin = function() {
     }
 };
 
+// 메인(선택어플 런처)으로 이동
+window.goMain = function() {
+    window.location.href = 'index.html';
+};
+
+// 폰: 뒤로가기 눌러도 앱 밖으로 안 나가고 대시보드로 되돌림
+// (앱에서 나가려면 화면의 🏠 메인 버튼 사용)
+function setupBackGuard() {
+    // 히스토리에 상태를 하나 쌓아 둠
+    history.pushState({ app: 'risk' }, '', location.href);
+    window.addEventListener('popstate', function() {
+        // 다시 상태를 밀어넣어 밖으로 못 나가게 하고
+        history.pushState({ app: 'risk' }, '', location.href);
+        // 대시보드 탭으로 이동
+        var dashTab = document.querySelector('.tab-item[onclick*="\'dashboard\'"]');
+        showPage('dashboard', dashTab);
+    });
+}
+
 window.enterViewerMode = function() {
     window.IS_ADMIN = false;
     document.getElementById('loginOverlay').style.display = 'none';
@@ -1392,8 +1475,16 @@ window.onload = function() {
     updateDashboard();
     setupPasteHandler();
     setupPhotoFocusTracking();
-    // 로그인 오버레이 표시 (PIN 또는 조회 모드 선택)
-    document.getElementById('loginOverlay').style.display = 'flex';
+
+    // 폰(좁은 화면)이면 로그인/조회선택 화면 건너뛰고 바로 조회 모드로 진입
+    if (window.matchMedia('(max-width: 600px)').matches) {
+        document.body.classList.add('mobile-view');
+        enterViewerMode();
+        setupBackGuard();   // 뒤로가기 눌러도 앱 밖으로 안 나가게
+    } else {
+        // 태블릿·PC는 기존대로 로그인 오버레이 표시 (PIN 또는 조회 모드 선택)
+        document.getElementById('loginOverlay').style.display = 'flex';
+    }
 };
 
 // ===================== 탭 =====================
