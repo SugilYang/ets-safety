@@ -5,20 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>이티에스 안전신문고</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        const firebaseConfig = {
-            apiKey: "AIzaSyDor8TFIeOI8IYrcw2nMgyvCoWNfS4FWsc",
-            authDomain: "risk-assessment-197be.firebaseapp.com",
-            projectId: "risk-assessment-197be",
-            storageBucket: "risk-assessment-197be.firebasestorage.app",
-            messagingSenderId: "274131432978",
-            appId: "1:274131432978:web:30cbc22ef98c71d90f4acb"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        window._fb = { db, addDoc, collection };
+    <script>
+        // 백엔드: Google Apps Script (위험성평가 프로그램과 동일한 Sheet/Drive 사용)
+        const API_URL = "https://script.google.com/macros/s/AKfycbxRYK5jbuaR5IhftfoZCE_S8o8xxPMdxddjZxFY0AHsxDN9-2NFpHms1pFiG9zSrHqDDg/exec";
     </script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family:"Noto Sans KR",sans-serif; }
@@ -658,18 +647,24 @@
         btn.textContent = '⏳ 제출 중...';
 
         const data = {
+            action:      'submitReport',
             name:        document.getElementById('name').value.trim() || '익명',
             contact:     document.getElementById('contact').value.trim() || '',
             affiliation, riskPlace, riskFactor,
             riskDesc:    document.getElementById('riskDesc').value.trim(),
             improvement: document.getElementById('improvement').value.trim(),
             photoBase64: photoBase64 || null,
-            submittedAt: Date.now(), status: '미확인'
+            submittedAt: Date.now()
         };
 
         try {
-            const { db, addDoc, collection } = window._fb;
-            await addDoc(collection(db, 'submissions'), data);
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (!result || result.ok !== true) throw new Error(result && result.error || 'save failed');
             document.getElementById('formSection').style.display = 'none';
             document.getElementById('successScreen').style.display = 'block';
             window.scrollTo({ top:0, behavior:'smooth' });
