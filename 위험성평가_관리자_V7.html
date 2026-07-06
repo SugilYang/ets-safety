@@ -1927,7 +1927,7 @@ function renderTable(data) {
             <td style="text-align:center;font-weight:700;">${a.freq}</td>
             <td style="text-align:center;font-weight:800;font-size:15px;">${a.score}</td>
             <td><span class="risk-badge ${rl.class}">${rl.level}</span></td>
-            <td>${a.responsible||'-'}</td><td>${a.dueDate||'-'}</td>
+            <td>${a.responsible||'-'}</td><td style="white-space:nowrap;">${fmtDate(a.dueDate)}</td>
             <td><span class="status-chip ${chipMap[a.status]||''}">${a.status}</span></td>
             <td style="text-align:center;">${hasPhoto?'📷':'-'}</td>
             <td><div style="display:flex;gap:4px;">
