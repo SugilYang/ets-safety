@@ -80,8 +80,10 @@
             padding: 20px 16px;
             margin-bottom: 14px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
+            text-align: center;
+            gap: 8px;
             cursor: pointer;
             transition: all 0.2s;
             text-decoration: none;
@@ -123,7 +125,7 @@
             flex-shrink: 0;
         }
 
-        .card-info { flex: 1; min-width: 0; }
+        .card-info { width: 100%; }
         .card-title {
             font-size: 15px;
             font-weight: 900;
@@ -131,11 +133,13 @@
             margin-bottom: 3px;
             letter-spacing: -0.4px;
             line-height: 1.2;
+            white-space: nowrap;
         }
         .card-desc {
             font-size: 11px;
             color: rgba(255,255,255,0.78);
             line-height: 1.4;
+            white-space: nowrap;
         }
 
         /* 배경 원형 장식 */
@@ -224,11 +228,11 @@
             </a>
         </div>
 
-        <!-- 오른쪽: 안전공지 -->
+        <!-- 오른쪽: 안전보건 필수사항 -->
         <div class="group-col">
-            <div class="group-label">안전공지</div>
+            <div class="group-label">안전보건 필수사항</div>
 
-            <a href="TBM_V5.html" class="app-card card-tbm">
+            <a href="https://sugilyang.github.io/ETS/" class="app-card card-tbm">
                 <div class="card-icon">🦺</div>
                 <div class="card-info">
                     <div class="card-title">TBM</div>
