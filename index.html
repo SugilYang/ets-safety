@@ -194,6 +194,14 @@
             text-align: center;
             line-height: 1.8;
         }
+        @media (min-width: 768px) {
+            .wrap { max-width: 620px; }
+            .app-card {
+                flex-direction: row;
+                text-align: left;
+            }
+            .card-info { text-align: left; }
+        }
     </style>
 </head>
 <body>
@@ -228,9 +236,9 @@
             </a>
         </div>
 
-        <!-- 오른쪽: 안전보건 필수사항 -->
+        <!-- 오른쪽: 안전공지 -->
         <div class="group-col">
-            <div class="group-label">안전보건 필수사항</div>
+            <div class="group-label">안전공지</div>
 
             <a href="https://sugilyang.github.io/ETS/" class="app-card card-tbm">
                 <div class="card-icon">🦺</div>
