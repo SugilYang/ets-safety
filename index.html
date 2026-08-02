@@ -119,6 +119,30 @@
             box-shadow: 0 8px 32px rgba(63,81,181,0.35);
         }
 
+        .card-cert {
+            background: linear-gradient(135deg, #4A148C 0%, #6A1B9A 50%, #8E24AA 100%);
+            box-shadow: 0 8px 32px rgba(106,27,154,0.38);
+        }
+
+        /* 전체폭 카드 (2열 그리드 아래) */
+        .card-full {
+            margin-top: 14px;
+            padding: 20px 22px;
+        }
+        .card-full .card-icon {
+            width: 54px; height: 54px;
+            font-size: 30px;
+            border-radius: 16px;
+        }
+        .card-full .card-title {
+            font-size: 18px;
+        }
+        .card-full .card-desc {
+            font-size: 13px;
+            white-space: normal;
+            word-break: keep-all;
+        }
+
         .card-icon {
             width: 46px; height: 46px;
             background: rgba(255,255,255,0.18);
@@ -260,6 +284,15 @@
             </a>
         </div>
     </div>
+
+    <!-- 전체폭: 현장안전준수필증 -->
+    <a href="https://sugilyang.github.io/loto/" class="app-card card-cert card-full">
+        <div class="card-icon">🎖️</div>
+        <div class="card-info">
+            <div class="card-title">현장안전준수필증</div>
+            <div class="card-desc">유효한 필증취득 시 현장작업 가능</div>
+        </div>
+    </a>
 
     <!-- 홈 화면 추가 (안드로이드) -->
     <button class="install-btn" id="installBtn">📲 홈 화면에 추가하기</button>
