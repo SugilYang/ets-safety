@@ -317,6 +317,78 @@
             font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
             position: relative; z-index: 3;
         }
+        .p-ai {
+            display: none; width: 100%; margin-top: 8px; padding: 13px;
+            background: linear-gradient(135deg, #7C5CBF, #5B3FA0); color: #fff;
+            border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 800; font-family: inherit; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(124,92,191,0.3);
+            position: relative; z-index: 3;
+        }
+        .p-ai:active { transform: scale(0.97); }
+        .p-ai:disabled { opacity: 0.6; cursor: default; }
+
+        /* ═══ 신고 방식 선택 ═══ */
+        .mode-card {
+            background: #fff; border-radius: 20px; padding: 18px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 14px;
+        }
+        .mode-title {
+            font-size: 15px; font-weight: 800; color: var(--gray);
+            text-align: center; margin-bottom: 12px;
+        }
+        .mode-ai {
+            position: relative; overflow: hidden;
+            display: block; width: 100%; padding: 20px 16px;
+            background: linear-gradient(135deg, #7C5CBF, #5B3FA0 60%, #3D2A75);
+            border: none; border-radius: 16px; cursor: pointer;
+            font-family: inherit; text-align: left;
+            box-shadow: 0 6px 20px rgba(124,92,191,0.4);
+            transition: transform 0.15s;
+        }
+        .mode-ai:active { transform: scale(0.97); }
+        .mode-ai::after {
+            content: ''; position: absolute; top: 0; left: -80%;
+            width: 50%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,0.35), transparent);
+            animation: modeShine 2.8s infinite;
+        }
+        @keyframes modeShine {
+            0%   { left: -80%; }
+            60%  { left: 130%; }
+            100% { left: 130%; }
+        }
+        .mode-ai-badge {
+            display: inline-block; background: #FFD54F; color: #5B3FA0;
+            font-size: 10.5px; font-weight: 900; letter-spacing: 0.5px;
+            padding: 3px 9px; border-radius: 999px; margin-bottom: 8px;
+            animation: modePulse 1.6s infinite;
+        }
+        @keyframes modePulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.08); }
+        }
+        .mode-ai-main { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 5px; }
+        .mode-ai-sub  { font-size: 12.5px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+        .mode-manual {
+            display: block; width: 100%; margin-top: 10px; padding: 14px 16px;
+            background: #fff; color: var(--gray);
+            border: 1.5px solid #E2E8F0; border-radius: 14px; cursor: pointer;
+            font-family: inherit; font-size: 14px; font-weight: 700;
+            transition: transform 0.15s;
+        }
+        .mode-manual:active { transform: scale(0.97); }
+        .pzone.ai-focus { animation: aiFocus 1.2s ease 2; }
+        @keyframes aiFocus {
+            0%, 100% { box-shadow: none; }
+            50%      { box-shadow: 0 0 0 4px rgba(124,92,191,0.45); }
+        }
+        .hero-ai {
+            display: inline-block; margin-top: 10px;
+            background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.4);
+            color: #fff; font-size: 12.5px; font-weight: 800;
+            padding: 7px 14px; border-radius: 999px;
+        }
 
         /* ══════════════════════════
            제출 버튼
@@ -431,6 +503,7 @@
                 <div class="hero-tag">🔔 이티에스 안전신문고</div>
                 <h2>작은 제보 하나가<br>모두의 안전을 지킵니다</h2>
                 <p>사업장 어디서나 위험하다 느낀 것은<br>무엇이든 알려주세요</p>
+                <div class="hero-ai">🤖 NEW! 사진 한 장이면 AI가 자동 작성</div>
                 <button class="hero-btn" onclick="scrollToForm()">
                     ➕ 지금 신고하기
                 </button>
@@ -449,6 +522,19 @@
         </div>
 
         <div id="formSection">
+
+            <!-- 신고 방식 선택 -->
+            <div class="mode-card slide-up">
+                <div class="mode-title">어떻게 신고하시겠어요?</div>
+                <button type="button" class="mode-ai" onclick="selectMode('ai')">
+                    <span class="mode-ai-badge">✨ NEW</span>
+                    <div class="mode-ai-main">🤖 AI 자동작성</div>
+                    <div class="mode-ai-sub">사진 한 장만 찍으면 인공지능이<br>위험 요인부터 개선 방향까지 알아서 작성합니다</div>
+                </button>
+                <button type="button" class="mode-manual" onclick="selectMode('manual')">
+                    ✍️ 직접 작성하기
+                </button>
+            </div>
 
             <!-- 제출자 정보 -->
             <div class="section-card slide-up">
@@ -536,6 +622,9 @@
                 <button class="p-del" id="photoDelBtn" onclick="removePhoto(event)">
                     🗑️ 사진 삭제
                 </button>
+                <button class="p-ai" id="aiBtn" onclick="aiAnalyze()">
+                    🤖 AI 자동작성 (사진 분석)
+                </button>
             </div>
 
             <!-- 개선 방향 -->
@@ -593,6 +682,22 @@
     }
 
     let photoBase64 = null;
+    let aiMode = false;
+    let aiFilledValues = {};
+
+    function selectMode(mode) {
+        aiMode = (mode === 'ai');
+        if (aiMode) {
+            const zone = document.getElementById('photoZone');
+            zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            zone.classList.remove('ai-focus');
+            void zone.offsetWidth; // 애니메이션 재시작
+            zone.classList.add('ai-focus');
+            showToast('📸 현장 사진을 찍으면 AI가 자동 작성합니다');
+        } else {
+            document.getElementById('formSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
 
     function formatPhone(input) {
         let val = input.value.replace(/\D/g, ''); // 숫자만 추출
@@ -627,6 +732,8 @@
                 document.getElementById('photoZone').classList.add('filled');
                 document.getElementById('photoBtns').style.display = 'none';
                 document.getElementById('photoDelBtn').style.display = 'block';
+                document.getElementById('aiBtn').style.display = 'block';
+                if (aiMode) aiAnalyze();
             };
             img.src = e.target.result;
         };
@@ -644,6 +751,44 @@
         document.getElementById('photoZone').classList.remove('filled');
         document.getElementById('photoBtns').style.display = 'flex';
         document.getElementById('photoDelBtn').style.display = 'none';
+        document.getElementById('aiBtn').style.display = 'none';
+        // 사진 삭제 시 AI 작성 내용도 삭제 (사용자가 수정한 내용은 보존)
+        for (const id in aiFilledValues) {
+            const el = document.getElementById(id);
+            if (el && el.value === aiFilledValues[id]) el.value = '';
+        }
+        aiFilledValues = {};
+    }
+
+    async function aiAnalyze() {
+        if (!photoBase64) { showToast('사진을 먼저 첨부해주세요', 'error'); return; }
+        const btn = document.getElementById('aiBtn');
+        btn.disabled = true;
+        btn.textContent = '🤖 AI가 사진을 분석 중입니다...';
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'analyzePhoto', photoBase64 })
+            });
+            const result = await res.json();
+            if (!result || result.ok !== true) throw new Error(result && result.error || 'analyze failed');
+
+            // 빈칸만 채움 (사용자 입력 보호) + AI가 채운 값 기록
+            const fill = (id, val) => {
+                const el = document.getElementById(id);
+                if (el && !el.value.trim() && val) { el.value = val; aiFilledValues[id] = val; }
+            };
+            fill('riskFactor',  result.riskFactor);
+            fill('riskDesc',    result.riskDesc);
+            fill('improvement', result.improvement);
+            showToast('AI 작성 완료! 소속과 위험 장소는 직접 입력해주세요');
+            document.getElementById('affiliation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (e) {
+            showToast('AI 분석 실패. 다시 시도해주세요', 'error');
+        }
+        btn.disabled = false;
+        btn.textContent = '🤖 AI 자동작성 (사진 분석)';
     }
 
     async function submitReport() {
@@ -688,6 +833,8 @@
     }
 
     function resetForm() {
+        aiMode = false;
+        aiFilledValues = {};
         ['name','contact','riskPlace','riskFactor','riskDesc','improvement']
             .forEach(id => document.getElementById(id).value = '');
         document.getElementById('affiliation').value = '';
