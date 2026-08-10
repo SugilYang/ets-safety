@@ -123,6 +123,33 @@
             background: linear-gradient(135deg, #4A148C 0%, #6A1B9A 50%, #8E24AA 100%);
             box-shadow: 0 8px 32px rgba(106,27,154,0.38);
         }
+        /* 좁은 컬럼에서 긴 제목 대응 (필증 카드 전용) */
+        .card-cert .card-title {
+            font-size: 13px;
+            letter-spacing: -0.6px;
+        }
+        .card-cert .card-desc {
+            font-size: 10.5px;
+            letter-spacing: -0.3px;
+        }
+
+        /* 건강 한 끼 카드 */
+        .card-health {
+            background: linear-gradient(135deg, #1B5E20 0%, #388E3C 50%, #7CB342 100%);
+            box-shadow: 0 8px 32px rgba(124,179,66,0.38);
+        }
+        .badge-new {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: #FFD54F;
+            color: #5D4037;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 3px 8px;
+            border-radius: 10px;
+            letter-spacing: 0.5px;
+            z-index: 1;
+        }
 
         /* 전체폭 카드 (2열 그리드 아래) */
         .card-full {
@@ -261,6 +288,15 @@
                     <div class="card-desc">작업중지 요청</div>
                 </div>
             </a>
+
+            <a href="https://sugilyang.github.io/ets-health/" class="app-card card-health">
+                <span class="badge-new" id="healthNewBadge">NEW</span>
+                <div class="card-icon">🍀</div>
+                <div class="card-info">
+                    <div class="card-title">건강 한 끼</div>
+                    <div class="card-desc">AI 식단 코칭</div>
+                </div>
+            </a>
         </div>
 
         <!-- 오른쪽: 안전보건 필수사항 -->
@@ -282,17 +318,16 @@
                     <div class="card-desc">자료 열람·공유</div>
                 </div>
             </a>
+
+            <a href="https://sugilyang.github.io/loto/" class="app-card card-cert">
+                <div class="card-icon">🎖️</div>
+                <div class="card-info">
+                    <div class="card-title">현장안전준수필증</div>
+                    <div class="card-desc">필증취득 시 작업가능</div>
+                </div>
+            </a>
         </div>
     </div>
-
-    <!-- 전체폭: 현장안전준수필증 -->
-    <a href="https://sugilyang.github.io/loto/" class="app-card card-cert card-full">
-        <div class="card-icon">🎖️</div>
-        <div class="card-info">
-            <div class="card-title">현장안전준수필증</div>
-            <div class="card-desc">유효한 필증취득 시 현장작업 가능</div>
-        </div>
-    </a>
 
     <!-- 홈 화면 추가 (안드로이드) -->
     <button class="install-btn" id="installBtn">📲 홈 화면에 추가하기</button>
@@ -310,6 +345,14 @@
 </div>
 
 <script>
+    // NEW 배지 자동 만료: 2026-09-07까지 표시, 이후 자동 숨김
+    (function () {
+        var badge = document.getElementById('healthNewBadge');
+        if (badge && new Date() > new Date('2026-09-07T23:59:59+09:00')) {
+            badge.style.display = 'none';
+        }
+    })();
+
     // 안드로이드: 설치 프롬프트
     let deferredPrompt = null;
     const installBtn = document.getElementById('installBtn');
