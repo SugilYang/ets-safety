@@ -56,6 +56,51 @@
             text-transform: uppercase;
         }
 
+
+        /* ===== 시안2: 프리미엄 화이트 게이지 ===== */
+        .heat-clean {
+            width:100%; margin-bottom:22px; padding:18px 20px 16px;
+            border-radius:22px; text-decoration:none;
+            background:#FFFFFF;
+            box-shadow:0 10px 34px rgba(30,50,60,0.10), 0 2px 6px rgba(30,50,60,0.05);
+            border:1px solid #EDF1F3;
+            display:block; position:relative; overflow:hidden; transition:transform .2s;
+        }
+        .heat-clean::before {
+            content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+            background:var(--stage-c,#E53935);
+            border-radius:22px 0 0 22px;
+        }
+        .hc-row1 { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:4px; }
+        .hc-left { display:flex; align-items:flex-end; gap:10px; }
+        .hc-big  { font-size:40px; font-weight:900; color:#1E2A32; line-height:0.95; letter-spacing:-1.5px; }
+        .hc-big small { font-size:17px; font-weight:800; color:#8CA0A8; letter-spacing:0; }
+        .hc-cap  { font-size:11px; font-weight:800; color:#8CA0A8; letter-spacing:0.5px; padding-bottom:4px; }
+        .hc-chip {
+            font-size:14px; font-weight:900; letter-spacing:2px;
+            color:#fff; background:var(--stage-c,#E53935);
+            padding:7px 15px; border-radius:999px;
+            box-shadow:0 5px 16px var(--stage-sh,rgba(229,57,53,0.4));
+        }
+        .hc-msg { font-size:12px; font-weight:700; color:var(--stage-c,#E53935); margin:7px 0 12px; letter-spacing:-0.3px; }
+
+        .hc-gauge { position:relative; height:8px; border-radius:99px; overflow:visible;
+            background:linear-gradient(90deg,#26A69A 0 20%,#FFEE58 20% 40%,#FFB74D 40% 60%,#FF6E40 60% 80%,#EF5350 80% 100%);
+        }
+        .hc-marker {
+            position:absolute; top:50%; left:var(--pos,70%);
+            width:18px; height:18px; border-radius:50%;
+            background:#fff; border:4px solid var(--stage-c,#E53935);
+            transform:translate(-50%,-50%);
+            box-shadow:0 2px 8px rgba(0,0,0,0.25);
+            transition:left 1s ease;
+        }
+        .hc-scale { display:flex; justify-content:space-between; margin-top:8px; }
+        .hc-scale span { font-size:9.5px; font-weight:700; color:#B4C2C8; width:20%; text-align:center; letter-spacing:1px; }
+        .hc-scale span.on { color:var(--stage-c,#E53935); font-weight:900; transform:scale(1.15); }
+        .hc-foot { margin-top:10px; font-size:10.5px; color:#9FB0B7; letter-spacing:-0.2px; display:flex; justify-content:space-between; }
+        .hc-foot b { color:#5A6E76; font-weight:800; }
+
         /* 2열 그룹 컨테이너 */
         .groups {
             width: 100%;
@@ -267,6 +312,23 @@
     </div>
     <div class="company-name">Safety System</div>
 
+    <!-- ===== 시안2: 프리미엄 화이트 게이지 ===== -->
+    <div class="heat-clean" id="heatBanner">
+        <div class="hc-row1">
+            <div class="hc-left">
+                <div class="hc-big" id="hcBig">--<small>℃</small></div>
+                <div class="hc-cap">현재 체감온도</div>
+            </div>
+            <div class="hc-chip" id="hcChip">--</div>
+        </div>
+        <div class="hc-msg" id="hcMsg">불러오는 중...</div>
+        <div class="hc-gauge"><div class="hc-marker" id="hcMarker"></div></div>
+        <div class="hc-scale" id="hcScale">
+            <span>정상</span><span>관심</span><span>주의</span><span>경고</span><span>위험</span>
+        </div>
+        <div class="hc-foot"><span id="hcFoot">아산 음봉면 · 기상청 실황</span></div>
+    </div>
+
     <!-- 안전신문고 -->
     <div class="groups">
         <!-- 왼쪽: 근로자 참여 -->
@@ -393,6 +455,66 @@
             card.setAttribute('href', base + sep + 'v=' + Date.now());
         });
     });
+
+    // ===== 체감온도 실시간 (데모: 경고 단계 강제) =====
+    var HEAT_GAS_URL  = 'https://script.google.com/macros/s/AKfycbw03wsm74NKVypQ1fwIJ4krPLg7rc3yYC4VbQqsPIEcJnpZe9FgmFMyIQcWCuHZ7bUs/exec';
+    var DEMO = false; // true 로 바꾸면 경고 데모 표시
+    var HEAT_REFRESH_MS = 10 * 60 * 1000;
+
+    function heatStage(feel) {
+        if (feel >= 38) return { name:'위험', c1:'#8E0000', c2:'#C62828', c3:'#EF5350', glow:'#FF1744' };
+        if (feel >= 35) return { name:'경고', c1:'#B71C1C', c2:'#E53935', c3:'#FF6E40', glow:'#FF3D00' };
+        if (feel >= 33) return { name:'주의', c1:'#E65100', c2:'#F57C00', c3:'#FFB74D', glow:'#FF9100' };
+        if (feel >= 31) return { name:'관심', c1:'#F9A825', c2:'#FBC02D', c3:'#FFEE58', glow:'#FFD600' };
+        return               { name:'정상', c1:'#00695C', c2:'#00897B', c3:'#26A69A', glow:'#1DE9B6' };
+    }
+    function stageIndex(feel){ return feel>=38?4:feel>=35?3:feel>=33?2:feel>=31?1:0; }
+
+    function pickNum(o,ks){for(var i=0;i<ks.length;i++){var v=o[ks[i]];if(v!==undefined&&v!==null&&v!==''&&!isNaN(parseFloat(v)))return parseFloat(v);}return null;}
+    function pickStr(o,ks){for(var i=0;i<ks.length;i++){var v=o[ks[i]];if(v!==undefined&&v!==null&&String(v)!=='')return String(v);}return '';}
+
+    function loadHeat() {
+        if (DEMO) { renderHeat(36.2, 34.5, 62, '14:30'); return; }
+        fetch(HEAT_GAS_URL + '?t=' + Date.now())
+            .then(function(r){return r.json();})
+            .then(function(d){
+                if (d && d.data) d = d.data;
+                if (Array.isArray(d)) d = d[d.length-1];
+                var feel = pickNum(d,['feel','feelTemp','feelsLike','apparent','ft','체감온도']);
+                var temp = pickNum(d,['temp','temperature','t1h','기온']);
+                var humi = pickNum(d,['humidity','humi','reh','습도']);
+                var time = pickStr(d,['time','updated','datetime','시각']);
+                if (feel === null) throw new Error('no feel');
+                renderHeat(feel, temp, humi, time);
+            })
+            .catch(function(e){ console.warn('heat load fail', e); renderHeatError(); });
+    }
+
+    var HC_MSG = ['온열 위험 낮음 · 정상 작업 가능','수분 섭취 권장','매 2시간 20분 이상 휴식 (법적 의무)','⚠ 14~17시 옥외작업 제한','⛔ 옥외작업 전면 중지'];
+    function renderHeat(feel, temp, humi, time) {
+        var s = heatStage(feel), idx = stageIndex(feel);
+        var el = document.querySelector('.heat-clean');
+        el.style.setProperty('--stage-c', s.c2);
+        el.style.setProperty('--stage-sh', s.c2 + '66');
+        document.getElementById('hcBig').innerHTML = feel.toFixed(1) + '<small>℃</small>';
+        document.getElementById('hcChip').textContent = s.name;
+        document.getElementById('hcMsg').textContent = HC_MSG[idx];
+        // 게이지 위치: 각 구간(정상<31/관심31-33/주의33-35/경고35-38/위험38-41)을 20%씩
+        var edges = [31,33,35,38], lo = idx===0?26:edges[idx-1], hi = idx===4?41:edges[idx];
+        var frac = Math.max(0, Math.min(1, (feel - lo) / (hi - lo)));
+        document.getElementById('hcMarker').style.setProperty('--pos', (idx*20 + frac*20).toFixed(1) + '%');
+        var spans = document.getElementById('hcScale').children;
+        for (var i=0;i<spans.length;i++) spans[i].className = (i===idx ? 'on' : '');
+        var f = ['아산 음봉면'];
+        if (temp !== null) f.push('기온 ' + temp.toFixed(1) + '℃');
+        if (humi !== null) f.push('습도 ' + Math.round(humi) + '%');
+        if (time) f.push('갱신 ' + time);
+        document.getElementById('hcFoot').textContent = f.join(' · ');
+    }
+    function renderHeatError(){ document.getElementById('hcMsg').textContent = '데이터 갱신 지연'; }
+
+    loadHeat();
+    setInterval(loadHeat, HEAT_REFRESH_MS);
 </script>
 </body>
 </html>
