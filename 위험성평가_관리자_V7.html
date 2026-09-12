@@ -1327,7 +1327,7 @@ window.doLogin = function() {
         document.getElementById('loginOverlay').style.display = 'none';
         applyRole();
         loadAssessments();
-        loadSubmissions();
+        // 제출함은 '근로자 제출함' 탭을 열 때만 로딩(showPage에서 호출) → 초기 로딩 속도 개선
     } else {
         document.getElementById('loginError').style.display = 'block';
     }
@@ -1374,11 +1374,30 @@ window.doLogout = function() {
 
 // ===================== 위험성평가 읽기 (구글 시트) =====================
 async function loadAssessments() {
+    // 1) 캐시가 있으면 즉시 표시 (사진 제외 경량본) → 화면이 바로 뜸
+    try {
+        const cached = JSON.parse(localStorage.getItem('cache_assessments_v7') || 'null');
+        if (cached && cached.length) {
+            assessments = cached;
+            updateDashboard();
+            renderTable(assessments);
+        }
+    } catch(e) {}
+    // 2) 서버에서 최신 데이터를 받아 교체
     try {
         assessments = await apiGet('assessments');
         assessments.sort((a,b) => (a.date||'').localeCompare(b.date||''));
         updateDashboard();
         renderTable(assessments);
+        // 3) 다음 접속을 위해 사진 제외 경량 캐시 저장 (localStorage 용량 보호)
+        try {
+            const light = assessments.map(a => {
+                const c = Object.assign({}, a);
+                delete c.beforePhoto; delete c.afterPhoto;
+                return c;
+            });
+            localStorage.setItem('cache_assessments_v7', JSON.stringify(light));
+        } catch(e) {}
     } catch(e) {
         showToast('데이터 불러오기 실패: ' + e.message, 'error');
     }
