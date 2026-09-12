@@ -1429,7 +1429,7 @@ window.loadSubmissions = async function() {
                         <div style="font-size:12px;color:#888;">📍 ${s.riskPlace || s.workplace || '-'} &nbsp;|&nbsp; 🏢 ${s.affiliation || '-'} &nbsp;|&nbsp; 👤 ${s.name || '익명'} &nbsp;|&nbsp; 🕐 ${date}</div>
                         ${s.riskDesc ? `<div style="margin-top:8px;font-size:13px;color:#555;background:#f5f5f5;padding:8px 12px;border-radius:8px;">${s.riskDesc}</div>` : ''}
                         ${s.improvement ? `<div style="margin-top:8px;font-size:13px;color:#1b5e20;background:#e8f5e9;padding:8px 12px;border-radius:8px;border-left:3px solid #2e7d32;"><b>💡 작성자 제안 개선 방향:</b> ${s.improvement}</div>` : ''}
-                        ${photo ? `<div style="margin-top:10px;"><img src="${photo}" style="width:100%;max-height:220px;object-fit:contain;background:#f5f5f5;border-radius:8px;border:1px solid #ddd;display:block;"></div>` : ''}
+                        ${photo ? `<div style="margin-top:10px;">${photoImg(photo,'제출사진','width:100%;max-height:220px;object-fit:contain;background:#f5f5f5;border-radius:8px;border:1px solid #ddd;display:block;')}</div>` : ''}
                     </div>
                     <div style="display:flex;gap:8px;">
                         <button onclick="importSubmission('${id}')" style="padding:8px 14px;background:#e8f5e9;color:#2e7d32;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ 평가로 가져오기</button>
@@ -2000,8 +2000,8 @@ function showDetail(idx) {
     const photoHtml = (a.beforePhoto||a.afterPhoto) ? `
         <div style="margin-top:16px;"><div style="font-size:14px;font-weight:700;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;"><span style="display:block;width:4px;height:16px;background:var(--secondary);border-radius:2px;"></span>📸 현장 사진</div>
         <div class="photo-compare">
-            ${a.beforePhoto?`<div class="photo-compare-item"><img src="${a.beforePhoto}" alt="개선 전"><p class="before-label" style="background:#ffebee;color:#c62828;padding:4px 8px;border-radius:6px;">🔴 개선 전 (Before)</p></div>`:''}
-            ${a.afterPhoto?`<div class="photo-compare-item"><img src="${a.afterPhoto}" alt="개선 후"><p class="after-label" style="background:#e8f5e9;color:#2e7d32;padding:4px 8px;border-radius:6px;">🟢 개선 후 (After)</p></div>`:''}
+            ${a.beforePhoto?`<div class="photo-compare-item">${photoImg(a.beforePhoto,'개선 전')}<p class="before-label" style="background:#ffebee;color:#c62828;padding:4px 8px;border-radius:6px;">🔴 개선 전 (Before)</p></div>`:''}
+            ${a.afterPhoto?`<div class="photo-compare-item">${photoImg(a.afterPhoto,'개선 후')}<p class="after-label" style="background:#e8f5e9;color:#2e7d32;padding:4px 8px;border-radius:6px;">🟢 개선 후 (After)</p></div>`:''}
         </div></div>` : '';
 
     document.getElementById('modalBody').innerHTML=`
@@ -2214,7 +2214,9 @@ function executePrint() {
 
     closePrintModal();
     buildPrintArea(targetData, title, company, {inclSummary, inclPhoto, inclAnalysis, inclImprovement});
-    setTimeout(()=>window.print(), 300);
+    // 사진이 모두 로드된 뒤(최대 8초 대기) 인쇄 → 사진 빈칸 인쇄 방지
+    showToast('보고서 준비 중... 사진 불러오는 중입니다.','');
+    waitForPrintImages(8000).then(()=>window.print());
 }
 
 function buildPrintArea(data, title, company, opts) {
@@ -2340,10 +2342,10 @@ function buildPrintArea(data, title, company, opts) {
             <div class="print-section-title">📸 현장 사진 (개선 전 · 후 비교)</div>
             <div class="print-photo-row">
                 <div class="print-photo-box">
-                    ${a.beforePhoto?`<img src="${a.beforePhoto}" alt="개선 전"><span class="photo-label before-label">🔴 개선 전 (Before)</span>`:`<div class="no-photo">📷 개선 전 사진 없음</div>`}
+                    ${a.beforePhoto?`${photoImg(a.beforePhoto,'개선 전')}<span class="photo-label before-label">🔴 개선 전 (Before)</span>`:`<div class="no-photo">📷 개선 전 사진 없음</div>`}
                 </div>
                 <div class="print-photo-box">
-                    ${a.afterPhoto?`<img src="${a.afterPhoto}" alt="개선 후"><span class="photo-label after-label">🟢 개선 후 (After)</span>`:`<div class="no-photo">📷 개선 후 사진 없음</div>`}
+                    ${a.afterPhoto?`${photoImg(a.afterPhoto,'개선 후')}<span class="photo-label after-label">🟢 개선 후 (After)</span>`:`<div class="no-photo">📷 개선 후 사진 없음</div>`}
                 </div>
             </div>`;
         }
@@ -2406,6 +2408,53 @@ function buildPrintArea(data, title, company, opts) {
     });
 
     document.getElementById('print-area').innerHTML = html;
+}
+
+// ===================== 사진 표시 도우미 =====================
+// 저장된 구글 드라이브 사진 주소에서 파일 ID만 뽑아냄
+function driveFileId(url) {
+    if (!url) return '';
+    var s = String(url);
+    var m = s.match(/\/d\/([-\w]+)/) || s.match(/[?&]id=([-\w]+)/);
+    return m ? m[1] : '';
+}
+// 사진 <img> 태그 생성: 안정적인 thumbnail 주소를 기본으로, 실패하면 자동으로 다른 주소로 재시도
+function photoImg(url, alt, style, cls) {
+    if (!url) return '';
+    alt = alt || '';
+    style = style || '';
+    cls = cls || '';
+    var id = driveFileId(url);
+    if (!id) {
+        return '<img src="' + url + '" alt="' + alt + '" class="' + cls + '" style="' + style + '" ' +
+               'onerror="this.onerror=null;">';
+    }
+    var primary = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1600';
+    var fb1 = 'https://lh3.googleusercontent.com/d/' + id + '=w1600';
+    var fb2 = 'https://drive.google.com/uc?export=view&id=' + id;
+    return '<img src="' + primary + '" alt="' + alt + '" class="' + cls + '" style="' + style + '" ' +
+           'data-fb1="' + fb1 + '" data-fb2="' + fb2 + '" onerror="photoImgFallback(this)">';
+}
+// 사진이 안 뜨면 순서대로 다른 주소를 다시 시도
+function photoImgFallback(img) {
+    if (img.dataset.fb1) { var u = img.dataset.fb1; img.removeAttribute('data-fb1'); img.src = u; return; }
+    if (img.dataset.fb2) { var u = img.dataset.fb2; img.removeAttribute('data-fb2'); img.src = u; return; }
+    img.onerror = null; // 더 이상 시도 안 함
+}
+// 인쇄 전: 보고서 영역의 사진이 모두 로드(또는 실패 확정)될 때까지 최대 maxMs 대기
+function waitForPrintImages(maxMs) {
+    return new Promise(function(resolve) {
+        var start = Date.now();
+        (function poll() {
+            var imgs = document.querySelectorAll('#print-area img');
+            var allDone = true;
+            for (var i = 0; i < imgs.length; i++) {
+                if (!imgs[i].complete) { allDone = false; break; }
+            }
+            if (allDone || Date.now() - start > maxMs) resolve();
+            else setTimeout(poll, 200);
+        })();
+    });
 }
 
 // ===================== 공통 함수 =====================
