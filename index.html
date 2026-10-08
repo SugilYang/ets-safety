@@ -20,6 +20,7 @@
     <style>
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family:"Noto Sans KR",sans-serif; }
 
+        html { overflow-x: hidden; }
         html, body {
             min-height: 100vh;
             background: #F4F6F8;
@@ -87,6 +88,9 @@
         .hc-gauge { position:relative; height:8px; border-radius:99px; overflow:visible;
             background:linear-gradient(90deg,#26A69A 0 20%,#FFEE58 20% 40%,#FFB74D 40% 60%,#FF6E40 60% 80%,#EF5350 80% 100%);
         }
+        .heat-clean.cold .hc-gauge { background:linear-gradient(90deg,#26A69A 0 20%,#64B5F6 20% 40%,#42A5F5 40% 60%,#1E88E5 60% 80%,#283593 80% 100%); }
+        .heat-clean.mild .hc-gauge, .heat-clean.mild .hc-scale { display:none; }
+        .heat-clean.mild .hc-msg { margin-bottom:2px; }
         .hc-marker {
             position:absolute; top:50%; left:var(--pos,70%);
             width:18px; height:18px; border-radius:50%;
@@ -519,6 +523,10 @@
     function pickStr(o,ks){for(var i=0;i<ks.length;i++){var v=o[ks[i]];if(v!==undefined&&v!==null&&String(v)!=='')return String(v);}return '';}
 
     function loadHeat() {
+        var demo = new URLSearchParams(location.search).get('demo');
+        if (demo === 'heat') { renderHeat(36.2, 34.5, 62, '14:30'); return; }
+        if (demo === 'cold') { renderHeat(-7.5, -3.2, 41, '08:10'); return; }
+        if (demo === 'mild') { renderHeat(17.8, 18.4, 55, '13:40'); return; }
         if (DEMO) { renderHeat(36.2, 34.5, 62, '14:30'); return; }
         fetch(HEAT_GAS_URL + '?t=' + Date.now())
             .then(function(r){return r.json();})
@@ -535,23 +543,58 @@
             .catch(function(e){ console.warn('heat load fail', e); renderHeatError(); });
     }
 
-    var HC_MSG = ['온열 위험 낮음 · 정상 작업 가능','수분 섭취 권장','매 2시간 20분 이상 휴식 (법적 의무)','⚠ 14~17시 옥외작업 제한','⛔ 옥외작업 전면 중지'];
+    var HC_MSG   = ['온열 위험 낮음 · 정상 작업 가능','수분 섭취 권장','매 2시간 20분 이상 휴식 (법적 의무)','⚠ 14~17시 옥외작업 제한','⛔ 옥외작업 전면 중지'];
+    var COLD_MSG = ['한랭 위험 낮음 · 정상 작업 가능','방한복·장갑 착용, 따뜻한 음료 비치','따뜻한 곳에서 주기적으로 휴식','휴식 늘리기 · 장시간 옥외작업 자제','⛔ 한파주의보 수준 · 옥외작업 제한'];
+    // 계절 자동 전환: 체감 31℃↑ 온열 / 기온 5℃↓ 한랭 / 그 외 일반 날씨
+    function pickMode(feel, temp) {
+        if (feel >= 31) return 'heat';
+        var t = (temp !== null ? temp : feel);
+        if (t <= 5) return 'cold';
+        return 'mild';
+    }
+    function coldStage(t) {
+        if (t <= -12) return { name:'위험', c2:'#283593' };
+        if (t <= -5)  return { name:'경고', c2:'#1565C0' };
+        if (t <= 0)   return { name:'주의', c2:'#1E88E5' };
+        if (t <= 5)   return { name:'관심', c2:'#42A5F5' };
+        return          { name:'정상', c2:'#00897B' };
+    }
+    function coldIndex(t){ return t<=-12?4:t<=-5?3:t<=0?2:t<=5?1:0; }
+
     function renderHeat(feel, temp, humi, time) {
-        var s = heatStage(feel), idx = stageIndex(feel);
+        var mode = pickMode(feel, temp);
         var el = document.querySelector('.heat-clean');
+        el.classList.remove('heat','cold','mild'); el.classList.add(mode);
+        var cap = el.querySelector('.hc-cap'), big = document.getElementById('hcBig');
+        var spans = document.getElementById('hcScale').children, idx = 0, s, msg;
+        var f = ['아산 음봉면'];
+        if (mode === 'heat') {
+            s = heatStage(feel); idx = stageIndex(feel); msg = HC_MSG[idx];
+            cap.textContent = '현재 체감온도'; big.innerHTML = feel.toFixed(1) + '<small>℃</small>';
+            var edges = [31,33,35,38], lo = idx===0?26:edges[idx-1], hi = idx===4?41:edges[idx];
+            var frac = Math.max(0, Math.min(1, (feel - lo) / (hi - lo)));
+            document.getElementById('hcMarker').style.setProperty('--pos', (idx*20 + frac*20).toFixed(1) + '%');
+            if (temp !== null) f.push('기온 ' + temp.toFixed(1) + '℃');
+        } else if (mode === 'cold') {
+            var t = (temp !== null ? temp : feel);
+            s = coldStage(t); idx = coldIndex(t); msg = COLD_MSG[idx];
+            cap.textContent = '현재 기온 · 한랭'; big.innerHTML = t.toFixed(1) + '<small>℃</small>';
+            // 구간: 정상 15~5 / 관심 5~0 / 주의 0~-5 / 경고 -5~-12 / 위험 -12~-20 (추울수록 오른쪽)
+            var warm = [15,5,0,-5,-12][idx], coldE = [5,0,-5,-12,-20][idx];
+            var fr = Math.max(0, Math.min(1, (warm - t) / (warm - coldE)));
+            document.getElementById('hcMarker').style.setProperty('--pos', (idx*20 + fr*20).toFixed(1) + '%');
+            if (feel !== null && feel !== t) f.push('체감 ' + feel.toFixed(1) + '℃');
+        } else {
+            var t2 = (temp !== null ? temp : feel);
+            s = { name:'쾌적', c2:'#00897B' }; msg = '온열·한랭 위험 낮음 · 정상 작업 가능';
+            cap.textContent = '현재 기온'; big.innerHTML = t2.toFixed(1) + '<small>℃</small>';
+            if (feel !== null && feel !== t2) f.push('체감 ' + feel.toFixed(1) + '℃');
+        }
         el.style.setProperty('--stage-c', s.c2);
         el.style.setProperty('--stage-sh', s.c2 + '66');
-        document.getElementById('hcBig').innerHTML = feel.toFixed(1) + '<small>℃</small>';
         document.getElementById('hcChip').textContent = s.name;
-        document.getElementById('hcMsg').textContent = HC_MSG[idx];
-        // 게이지 위치: 각 구간(정상<31/관심31-33/주의33-35/경고35-38/위험38-41)을 20%씩
-        var edges = [31,33,35,38], lo = idx===0?26:edges[idx-1], hi = idx===4?41:edges[idx];
-        var frac = Math.max(0, Math.min(1, (feel - lo) / (hi - lo)));
-        document.getElementById('hcMarker').style.setProperty('--pos', (idx*20 + frac*20).toFixed(1) + '%');
-        var spans = document.getElementById('hcScale').children;
-        for (var i=0;i<spans.length;i++) spans[i].className = (i===idx ? 'on' : '');
-        var f = ['아산 음봉면'];
-        if (temp !== null) f.push('기온 ' + temp.toFixed(1) + '℃');
+        document.getElementById('hcMsg').textContent = msg;
+        for (var i=0;i<spans.length;i++) spans[i].className = (mode!=='mild' && i===idx ? 'on' : '');
         if (humi !== null) f.push('습도 ' + Math.round(humi) + '%');
         if (time) f.push('갱신 ' + time);
         document.getElementById('hcFoot').textContent = f.join(' · ');
