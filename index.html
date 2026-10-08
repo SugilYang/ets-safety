@@ -525,26 +525,37 @@
     function pickNum(o,ks){for(var i=0;i<ks.length;i++){var v=o[ks[i]];if(v!==undefined&&v!==null&&v!==''&&!isNaN(parseFloat(v)))return parseFloat(v);}return null;}
     function pickStr(o,ks){for(var i=0;i<ks.length;i++){var v=o[ks[i]];if(v!==undefined&&v!==null&&String(v)!=='')return String(v);}return '';}
 
-    function loadHeat() {
+    // 마지막 값을 폰에 저장해 두고 열자마자 즉시 표시 → 뒤에서 새 값 받아 조용히 갱신
+    var HEAT_KEY = 'ets_heat_last';
+    function applyHeatData(d) {
+        if (d && d.data) d = d.data;
+        if (Array.isArray(d)) d = d[d.length-1];
+        var feel = pickNum(d,['feel','feelTemp','feelsLike','apparent','ft','체감온도']);
+        var temp = pickNum(d,['temp','temperature','t1h','기온']);
+        var humi = pickNum(d,['humidity','humi','reh','습도']);
+        var time = pickStr(d,['time','updated','datetime','시각']);
+        if (feel === null) throw new Error('no feel');
+        renderHeat(feel, temp, humi, time, { pty: pickNum(d,['pty']), sky: pickNum(d,['sky']), cond: pickStr(d,['cond']) });
+    }
+    function showCachedHeat() {
+        try { var c = localStorage.getItem(HEAT_KEY); if (c) { applyHeatData(JSON.parse(c)); return true; } } catch (e) {}
+        return false;
+    }
+    function loadHeat(first) {
         var demo = new URLSearchParams(location.search).get('demo');
         if (demo === 'heat') { renderHeat(36.2, 34.5, 62, '14:30', {pty:0, sky:1, cond:'맑음'}); return; }
         if (demo === 'cold') { renderHeat(-7.5, -3.2, 41, '08:10', {pty:3, sky:4, cond:'눈'}); return; }
         if (demo === 'mild') { renderHeat(17.8, 18.4, 55, '13:40', {pty:1, sky:4, cond:'비'}); return; }
         if (demo === 'mild2') { renderHeat(22.8, 24.6, 34, '17:37', {pty:0, sky:3, cond:'구름많음'}); return; }
         if (DEMO) { renderHeat(36.2, 34.5, 62, '14:30'); return; }
+        var hadCache = first ? showCachedHeat() : true;
         fetch(HEAT_GAS_URL + '?t=' + Date.now())
             .then(function(r){return r.json();})
             .then(function(d){
-                if (d && d.data) d = d.data;
-                if (Array.isArray(d)) d = d[d.length-1];
-                var feel = pickNum(d,['feel','feelTemp','feelsLike','apparent','ft','체감온도']);
-                var temp = pickNum(d,['temp','temperature','t1h','기온']);
-                var humi = pickNum(d,['humidity','humi','reh','습도']);
-                var time = pickStr(d,['time','updated','datetime','시각']);
-                if (feel === null) throw new Error('no feel');
-                renderHeat(feel, temp, humi, time, { pty: pickNum(d,['pty']), sky: pickNum(d,['sky']), cond: pickStr(d,['cond']) });
+                applyHeatData(d);
+                try { localStorage.setItem(HEAT_KEY, JSON.stringify(d)); } catch (e) {}
             })
-            .catch(function(e){ console.warn('heat load fail', e); renderHeatError(); });
+            .catch(function(e){ console.warn('heat load fail', e); if (!hadCache) renderHeatError(); });
     }
 
     var HC_MSG   = ['온열 위험 낮음 · 정상 작업 가능','수분 섭취 권장','매 2시간 20분 이상 휴식 (법적 의무)','⚠ 14~17시 옥외작업 제한','⛔ 옥외작업 전면 중지'];
@@ -620,8 +631,8 @@
     }
     function renderHeatError(){ document.getElementById('hcMsg').textContent = '데이터 갱신 지연'; }
 
-    loadHeat();
-    setInterval(loadHeat, HEAT_REFRESH_MS);
+    loadHeat(true);
+    setInterval(function(){ loadHeat(false); }, HEAT_REFRESH_MS);
 </script>
 </body>
 </html>
