@@ -196,6 +196,29 @@
             z-index: 1;
         }
 
+
+        /* 고객사 출입 (전체폭 섹션) */
+        .group-wide { margin-bottom: 18px; }
+        .card-customer {
+            background: linear-gradient(135deg, #0F1115 0%, #23262E 55%, #3C404B 100%);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+            flex-direction: row;
+            text-align: left;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 22px;
+            margin-bottom: 0;
+        }
+        .card-customer .card-icon { width: 56px; height: 56px; font-size: 30px; border-radius: 16px; flex-shrink: 0; }
+        .card-customer .card-info { text-align: left; }
+        .card-customer .card-title { font-size: 18px; }
+        .card-customer .card-desc { font-size: 12.5px; white-space: normal; word-break: keep-all; }
+        .card-customer .card-go {
+            margin-left: auto; flex-shrink: 0;
+            background: #F2C14E; color: #1a1a1a;
+            font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 999px; white-space: nowrap;
+        }
+
         /* 전체폭 카드 (2열 그리드 아래) */
         .card-full {
             margin-top: 14px;
@@ -327,6 +350,19 @@
             <span>정상</span><span>관심</span><span>주의</span><span>경고</span><span>위험</span>
         </div>
         <div class="hc-foot"><span id="hcFoot">아산 음봉면 · 기상청 실황</span></div>
+    </div>
+
+    <!-- 고객사 출입 -->
+    <div class="group-col group-wide">
+        <div class="group-label">고객사 현장 출입 전 필수</div>
+        <a href="https://sugilyang.github.io/customer-safety/" class="app-card card-customer">
+            <div class="card-icon">🏭</div>
+            <div class="card-info">
+                <div class="card-title">고객사 현장 안전 길잡이</div>
+                <div class="card-desc">출입 전 안전교육 · 작업수칙 검색</div>
+            </div>
+            <span class="card-go">열기 ›</span>
+        </a>
     </div>
 
     <!-- 안전신문고 -->
