@@ -95,8 +95,8 @@
         .heat-clean.mild .hc-msg { margin-bottom:2px; }
         /* 로딩 연출 */
         .heat-clean.loading { --stage-c:#8CA0A8; --stage-sh:rgba(140,160,168,0.35); }
-        .heat-clean.loading .hc-big { color:transparent; background:linear-gradient(90deg,#E3E9EC 25%,#F6F8F9 50%,#E3E9EC 75%); background-size:200% 100%; border-radius:10px; animation:hcShimmer 1.2s linear infinite; }
-        .heat-clean.loading .hc-big small { color:transparent; }
+        .heat-clean.loading .hc-big { color:#C5D0D5; animation:hcPulse 1.6s ease-in-out infinite; }
+        .heat-clean.loading .hc-big small { color:#C5D0D5; }
         .heat-clean.loading .hc-chip { background:#E3E9EC; color:#8CA0A8; box-shadow:none; }
         .heat-clean.loading .hc-wx { animation:hcPulse 1.6s ease-in-out infinite; }
         .heat-clean.loading .hc-marker { animation:hcSweep 2.4s ease-in-out infinite; border-color:#B4C2C8; }
@@ -555,7 +555,7 @@
     function startHeatLoading() {
         var el = document.querySelector('.heat-clean'); el.classList.add('loading');
         document.getElementById('hcWx').style.display = ''; document.getElementById('hcWx').textContent = '🛰️';
-        document.getElementById('hcBig').innerHTML = '--<small>℃</small>';
+        document.getElementById('hcBig').innerHTML = '--.-<small>℃</small>';
         el.querySelector('.hc-cap').innerHTML = '현재<br>날씨';
         document.getElementById('hcChip').textContent = '수신 중';
         var i = 0, msg = document.getElementById('hcMsg');
