@@ -93,6 +93,20 @@
         .heat-clean.cold .hc-gauge { background:linear-gradient(90deg,#26A69A 0 20%,#64B5F6 20% 40%,#42A5F5 40% 60%,#1E88E5 60% 80%,#283593 80% 100%); }
         .heat-clean.mild .hc-gauge, .heat-clean.mild .hc-scale { display:none; }
         .heat-clean.mild .hc-msg { margin-bottom:2px; }
+        /* 로딩 연출 */
+        .heat-clean.loading { --stage-c:#8CA0A8; --stage-sh:rgba(140,160,168,0.35); }
+        .heat-clean.loading .hc-big { color:transparent; background:linear-gradient(90deg,#E3E9EC 25%,#F6F8F9 50%,#E3E9EC 75%); background-size:200% 100%; border-radius:10px; animation:hcShimmer 1.2s linear infinite; }
+        .heat-clean.loading .hc-big small { color:transparent; }
+        .heat-clean.loading .hc-chip { background:#E3E9EC; color:#8CA0A8; box-shadow:none; }
+        .heat-clean.loading .hc-wx { animation:hcPulse 1.6s ease-in-out infinite; }
+        .heat-clean.loading .hc-marker { animation:hcSweep 2.4s ease-in-out infinite; border-color:#B4C2C8; }
+        .heat-clean.loading .hc-msg { color:#8CA0A8; }
+        .hc-dots i { font-style:normal; animation:hcDot 1.2s infinite; }
+        .hc-dots i:nth-child(2) { animation-delay:.2s } .hc-dots i:nth-child(3) { animation-delay:.4s }
+        @keyframes hcShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        @keyframes hcPulse { 0%,100%{opacity:.35; transform:scale(.96)} 50%{opacity:1; transform:scale(1.04)} }
+        @keyframes hcSweep { 0%,100%{left:8%} 50%{left:92%} }
+        @keyframes hcDot { 0%,60%,100%{opacity:.2} 30%{opacity:1} }
         .hc-marker {
             position:absolute; top:50%; left:var(--pos,70%);
             width:18px; height:18px; border-radius:50%;
@@ -356,7 +370,7 @@
             <div class="hc-left">
                 <div class="hc-wx" id="hcWx" style="display:none"></div>
                 <div class="hc-big" id="hcBig">--<small>℃</small></div>
-                <div class="hc-cap">현재 체감온도</div>
+                <div class="hc-cap">현재<br>날씨</div>
             </div>
             <div class="hc-chip" id="hcChip">--</div>
         </div>
@@ -525,8 +539,6 @@
     function pickNum(o,ks){for(var i=0;i<ks.length;i++){var v=o[ks[i]];if(v!==undefined&&v!==null&&v!==''&&!isNaN(parseFloat(v)))return parseFloat(v);}return null;}
     function pickStr(o,ks){for(var i=0;i<ks.length;i++){var v=o[ks[i]];if(v!==undefined&&v!==null&&String(v)!=='')return String(v);}return '';}
 
-    // 마지막 값을 폰에 저장해 두고 열자마자 즉시 표시 → 뒤에서 새 값 받아 조용히 갱신
-    var HEAT_KEY = 'ets_heat_last';
     function applyHeatData(d) {
         if (d && d.data) d = d.data;
         if (Array.isArray(d)) d = d[d.length-1];
@@ -537,9 +549,22 @@
         if (feel === null) throw new Error('no feel');
         renderHeat(feel, temp, humi, time, { pty: pickNum(d,['pty']), sky: pickNum(d,['sky']), cond: pickStr(d,['cond']) });
     }
-    function showCachedHeat() {
-        try { var c = localStorage.getItem(HEAT_KEY); if (c) { applyHeatData(JSON.parse(c)); return true; } } catch (e) {}
-        return false;
+    // 로딩 연출: 기상청 실황 수신 중
+    var HEAT_LOAD_MSG = ['기상청 실황 연결 중', '아산 음봉면 관측값 수신 중', '작업 환경 분석 중'];
+    var heatLoadTimer = null;
+    function startHeatLoading() {
+        var el = document.querySelector('.heat-clean'); el.classList.add('loading');
+        document.getElementById('hcWx').style.display = ''; document.getElementById('hcWx').textContent = '🛰️';
+        document.getElementById('hcBig').innerHTML = '--<small>℃</small>';
+        el.querySelector('.hc-cap').innerHTML = '현재<br>날씨';
+        document.getElementById('hcChip').textContent = '수신 중';
+        var i = 0, msg = document.getElementById('hcMsg');
+        var tick = function(){ msg.innerHTML = HEAT_LOAD_MSG[i % HEAT_LOAD_MSG.length] + '<span class="hc-dots"><i>.</i><i>.</i><i>.</i></span>'; i++; };
+        tick(); heatLoadTimer = setInterval(tick, 1400);
+    }
+    function stopHeatLoading() {
+        if (heatLoadTimer) { clearInterval(heatLoadTimer); heatLoadTimer = null; }
+        document.querySelector('.heat-clean').classList.remove('loading');
     }
     function loadHeat(first) {
         var demo = new URLSearchParams(location.search).get('demo');
@@ -548,14 +573,13 @@
         if (demo === 'mild') { renderHeat(17.8, 18.4, 55, '13:40', {pty:1, sky:4, cond:'비'}); return; }
         if (demo === 'mild2') { renderHeat(22.8, 24.6, 34, '17:37', {pty:0, sky:3, cond:'구름많음'}); return; }
         if (DEMO) { renderHeat(36.2, 34.5, 62, '14:30'); return; }
-        var hadCache = first ? showCachedHeat() : true;
+        if (first) startHeatLoading();
         fetch(HEAT_GAS_URL + '?t=' + Date.now())
             .then(function(r){return r.json();})
             .then(function(d){
                 applyHeatData(d);
-                try { localStorage.setItem(HEAT_KEY, JSON.stringify(d)); } catch (e) {}
             })
-            .catch(function(e){ console.warn('heat load fail', e); if (!hadCache) renderHeatError(); });
+            .catch(function(e){ console.warn('heat load fail', e); if (first) renderHeatError(); });
     }
 
     var HC_MSG   = ['온열 위험 낮음 · 정상 작업 가능','수분 섭취 권장','매 2시간 20분 이상 휴식 (법적 의무)','⚠ 14~17시 옥외작업 제한','⛔ 옥외작업 전면 중지'];
@@ -589,6 +613,7 @@
         return '';
     }
     function renderHeat(feel, temp, humi, time, wx) {
+        stopHeatLoading();
         var mode = pickMode(feel, temp);
         var ic = wxIcon(wx), wxEl = document.getElementById('hcWx');
         wxEl.textContent = ic; wxEl.style.display = ic ? '' : 'none';
@@ -626,10 +651,11 @@
         for (var i=0;i<spans.length;i++) spans[i].className = (mode!=='mild' && i===idx ? 'on' : '');
         if (wx && wx.cond) f.push(wx.cond);
         if (humi !== null) f.push('습도 ' + Math.round(humi) + '%');
-        if (time) f.push('갱신 ' + time);
+        if (time) { var td = Utilities_today(); f.push('갱신 ' + (time.indexOf(td) === 0 ? time.slice(11) : time.slice(5))); }
         document.getElementById('hcFoot').innerHTML = f.map(function(x){ return '<span style="white-space:nowrap">' + x + '</span>'; }).join(' · ');
     }
-    function renderHeatError(){ document.getElementById('hcMsg').textContent = '데이터 갱신 지연'; }
+    function Utilities_today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+    function renderHeatError(){ stopHeatLoading(); document.getElementById('hcWx').style.display = 'none'; document.getElementById('hcChip').textContent = '대기'; document.getElementById('hcMsg').textContent = '기상청 응답 지연 · 잠시 후 다시 받아옵니다'; }
 
     loadHeat(true);
     setInterval(function(){ loadHeat(false); }, HEAT_REFRESH_MS);
