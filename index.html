@@ -73,10 +73,12 @@
             border-radius:22px 0 0 22px;
         }
         .hc-row1 { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:4px; }
-        .hc-left { display:flex; align-items:flex-end; gap:10px; }
+        .hc-left { display:flex; align-items:flex-end; gap:10px; min-width:0; }
+        .hc-chip { flex-shrink:0; margin-left:8px; }
+        .hc-wx   { font-size:32px; line-height:1; padding-bottom:2px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.12)); }
         .hc-big  { font-size:40px; font-weight:900; color:#1E2A32; line-height:0.95; letter-spacing:-1.5px; }
         .hc-big small { font-size:17px; font-weight:800; color:#8CA0A8; letter-spacing:0; }
-        .hc-cap  { font-size:11px; font-weight:800; color:#8CA0A8; letter-spacing:0.5px; padding-bottom:4px; }
+        .hc-cap  { font-size:11px; font-weight:800; color:#8CA0A8; letter-spacing:0.5px; padding-bottom:4px; line-height:1.25; white-space:nowrap; }
         .hc-chip {
             font-size:14px; font-weight:900; letter-spacing:2px;
             color:#fff; background:var(--stage-c,#E53935);
@@ -102,7 +104,7 @@
         .hc-scale { display:flex; justify-content:space-between; margin-top:8px; }
         .hc-scale span { font-size:9.5px; font-weight:700; color:#B4C2C8; width:20%; text-align:center; letter-spacing:1px; }
         .hc-scale span.on { color:var(--stage-c,#E53935); font-weight:900; transform:scale(1.15); }
-        .hc-foot { margin-top:10px; font-size:10.5px; color:#9FB0B7; letter-spacing:-0.2px; display:flex; justify-content:space-between; }
+        .hc-foot { margin-top:10px; font-size:10.5px; color:#9FB0B7; letter-spacing:-0.2px; line-height:1.6; }
         .hc-foot b { color:#5A6E76; font-weight:800; }
 
         /* 2열 그룹 컨테이너 */
@@ -352,6 +354,7 @@
     <div class="heat-clean" id="heatBanner">
         <div class="hc-row1">
             <div class="hc-left">
+                <div class="hc-wx" id="hcWx" style="display:none"></div>
                 <div class="hc-big" id="hcBig">--<small>℃</small></div>
                 <div class="hc-cap">현재 체감온도</div>
             </div>
@@ -524,9 +527,10 @@
 
     function loadHeat() {
         var demo = new URLSearchParams(location.search).get('demo');
-        if (demo === 'heat') { renderHeat(36.2, 34.5, 62, '14:30'); return; }
-        if (demo === 'cold') { renderHeat(-7.5, -3.2, 41, '08:10'); return; }
-        if (demo === 'mild') { renderHeat(17.8, 18.4, 55, '13:40'); return; }
+        if (demo === 'heat') { renderHeat(36.2, 34.5, 62, '14:30', {pty:0, sky:1, cond:'맑음'}); return; }
+        if (demo === 'cold') { renderHeat(-7.5, -3.2, 41, '08:10', {pty:3, sky:4, cond:'눈'}); return; }
+        if (demo === 'mild') { renderHeat(17.8, 18.4, 55, '13:40', {pty:1, sky:4, cond:'비'}); return; }
+        if (demo === 'mild2') { renderHeat(22.8, 24.6, 34, '17:37', {pty:0, sky:3, cond:'구름많음'}); return; }
         if (DEMO) { renderHeat(36.2, 34.5, 62, '14:30'); return; }
         fetch(HEAT_GAS_URL + '?t=' + Date.now())
             .then(function(r){return r.json();})
@@ -538,7 +542,7 @@
                 var humi = pickNum(d,['humidity','humi','reh','습도']);
                 var time = pickStr(d,['time','updated','datetime','시각']);
                 if (feel === null) throw new Error('no feel');
-                renderHeat(feel, temp, humi, time);
+                renderHeat(feel, temp, humi, time, { pty: pickNum(d,['pty']), sky: pickNum(d,['sky']), cond: pickStr(d,['cond']) });
             })
             .catch(function(e){ console.warn('heat load fail', e); renderHeatError(); });
     }
@@ -561,8 +565,22 @@
     }
     function coldIndex(t){ return t<=-12?4:t<=-5?3:t<=0?2:t<=5?1:0; }
 
-    function renderHeat(feel, temp, humi, time) {
+    // 날씨 아이콘: 강수(PTY) 우선, 없으면 하늘(SKY)
+    function wxIcon(wx) {
+        if (!wx) return '';
+        var p = wx.pty, k = wx.sky;
+        if (p === 1 || p === 5) return '🌧️';
+        if (p === 2 || p === 6) return '🌨️';
+        if (p === 3 || p === 7) return '❄️';
+        if (k === 1) return '☀️';
+        if (k === 3) return '⛅';
+        if (k === 4) return '☁️';
+        return '';
+    }
+    function renderHeat(feel, temp, humi, time, wx) {
         var mode = pickMode(feel, temp);
+        var ic = wxIcon(wx), wxEl = document.getElementById('hcWx');
+        wxEl.textContent = ic; wxEl.style.display = ic ? '' : 'none';
         var el = document.querySelector('.heat-clean');
         el.classList.remove('heat','cold','mild'); el.classList.add(mode);
         var cap = el.querySelector('.hc-cap'), big = document.getElementById('hcBig');
@@ -570,7 +588,7 @@
         var f = ['아산 음봉면'];
         if (mode === 'heat') {
             s = heatStage(feel); idx = stageIndex(feel); msg = HC_MSG[idx];
-            cap.textContent = '현재 체감온도'; big.innerHTML = feel.toFixed(1) + '<small>℃</small>';
+            cap.innerHTML = '현재<br>체감온도'; big.innerHTML = feel.toFixed(1) + '<small>℃</small>';
             var edges = [31,33,35,38], lo = idx===0?26:edges[idx-1], hi = idx===4?41:edges[idx];
             var frac = Math.max(0, Math.min(1, (feel - lo) / (hi - lo)));
             document.getElementById('hcMarker').style.setProperty('--pos', (idx*20 + frac*20).toFixed(1) + '%');
@@ -578,7 +596,7 @@
         } else if (mode === 'cold') {
             var t = (temp !== null ? temp : feel);
             s = coldStage(t); idx = coldIndex(t); msg = COLD_MSG[idx];
-            cap.textContent = '현재 기온 · 한랭'; big.innerHTML = t.toFixed(1) + '<small>℃</small>';
+            cap.innerHTML = '현재 기온<br>한랭 단계'; big.innerHTML = t.toFixed(1) + '<small>℃</small>';
             // 구간: 정상 15~5 / 관심 5~0 / 주의 0~-5 / 경고 -5~-12 / 위험 -12~-20 (추울수록 오른쪽)
             var warm = [15,5,0,-5,-12][idx], coldE = [5,0,-5,-12,-20][idx];
             var fr = Math.max(0, Math.min(1, (warm - t) / (warm - coldE)));
@@ -587,7 +605,7 @@
         } else {
             var t2 = (temp !== null ? temp : feel);
             s = { name:'쾌적', c2:'#00897B' }; msg = '온열·한랭 위험 낮음 · 정상 작업 가능';
-            cap.textContent = '현재 기온'; big.innerHTML = t2.toFixed(1) + '<small>℃</small>';
+            cap.innerHTML = '현재<br>기온'; big.innerHTML = t2.toFixed(1) + '<small>℃</small>';
             if (feel !== null && feel !== t2) f.push('체감 ' + feel.toFixed(1) + '℃');
         }
         el.style.setProperty('--stage-c', s.c2);
@@ -595,9 +613,10 @@
         document.getElementById('hcChip').textContent = s.name;
         document.getElementById('hcMsg').textContent = msg;
         for (var i=0;i<spans.length;i++) spans[i].className = (mode!=='mild' && i===idx ? 'on' : '');
+        if (wx && wx.cond) f.push(wx.cond);
         if (humi !== null) f.push('습도 ' + Math.round(humi) + '%');
         if (time) f.push('갱신 ' + time);
-        document.getElementById('hcFoot').textContent = f.join(' · ');
+        document.getElementById('hcFoot').innerHTML = f.map(function(x){ return '<span style="white-space:nowrap">' + x + '</span>'; }).join(' · ');
     }
     function renderHeatError(){ document.getElementById('hcMsg').textContent = '데이터 갱신 지연'; }
 
