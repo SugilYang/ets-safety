@@ -198,7 +198,8 @@
 
 
         /* 고객사 출입 (전체폭 섹션) */
-        .group-wide { margin-bottom: 18px; }
+        .group-wide { width: 100%; margin-bottom: 18px; }
+        .card-customer .card-info { min-width: 0; }
         .card-customer {
             background: linear-gradient(135deg, #0F1115 0%, #23262E 55%, #3C404B 100%);
             box-shadow: 0 8px 32px rgba(0,0,0,0.45);
@@ -211,7 +212,15 @@
         }
         .card-customer .card-icon { width: 56px; height: 56px; font-size: 30px; border-radius: 16px; flex-shrink: 0; }
         .card-customer .card-info { text-align: left; }
-        .card-customer .card-title { font-size: 18px; }
+        .card-customer .card-title { font-size: 18px; white-space: normal; word-break: keep-all; }
+        .card-customer { min-width: 0; }
+        @media (max-width: 400px) {
+            .card-customer { gap: 14px; padding: 18px 18px; }
+            .card-customer .card-icon { width: 50px; height: 50px; font-size: 26px; }
+            .card-customer .card-title { font-size: 16px; }
+            .card-customer .card-desc { font-size: 12px; }
+            .card-customer .card-go { display: none; }
+        }
         .card-customer .card-desc { font-size: 12.5px; white-space: normal; word-break: keep-all; }
         .card-customer .card-go {
             margin-left: auto; flex-shrink: 0;
@@ -359,7 +368,7 @@
             <div class="card-icon">🏭</div>
             <div class="card-info">
                 <div class="card-title">고객사 현장 안전 길잡이</div>
-                <div class="card-desc">출입 전 안전교육 · 작업수칙 검색</div>
+                <div class="card-desc"><span style="white-space:nowrap">출입 전 안전교육</span> · <span style="white-space:nowrap">작업수칙 검색</span></div>
             </div>
             <span class="card-go">열기 ›</span>
         </a>
